@@ -1,0 +1,91 @@
+//вспомогательная функция - делает паузу и очищает входной буфер
+//в данном простом примере мы не анализируем ответы модуля, а
+//просто игнорируем их - это не очень корректно, и не рекомендуется
+//в серьезных проектах, но это сильно упрощает понимание протокола
+void DelayAndClear()
+{
+  delay(1000);
+  while (Serial.available() > 0) Serial.read();
+}
+
+void setup()
+{
+  delay(2000);
+  Serial.begin(9600);
+  Serial.print("$$$"); DelayAndClear();                   //командный режим
+  Serial.println("set wlan join 0"); DelayAndClear();     //отключаем авто-соединение с сетью
+  Serial.println("set ip dhcp 0"); DelayAndClear();       //отключаем DHCP
+  //выставляем IP адрес и маску
+  Serial.println("set ip address 192.168.1.177"); DelayAndClear();
+  Serial.println("set ip mask 255.255.255.0"); DelayAndClear();
+  Serial.println("set comm remote 0"); DelayAndClear();   //отключаем стандартный ответ
+  Serial.println("set ip localport 80"); DelayAndClear(); //будем слушать 80 порт (HTTP)
+  Serial.println("set wlan auth 4"); DelayAndClear();     //выбираем WPA2-аутентификацию
+  //выставляем WPA ключ
+  Serial.println("set wlan phrase MYPASSWORD"); DelayAndClear();
+  delay(1000); DelayAndClear(); //нужна небольшая пауза после установки ключа
+  //подключаемся к сети с указанным именем
+  Serial.println("join MYNETWORK"); DelayAndClear();
+  //организуем паузу - модуль подключается к сети не мгновенно
+  //более правильным было бы выполнять анализ ответа модуля
+  delay(1000); DelayAndClear();
+  delay(1000); DelayAndClear();
+  delay(1000); DelayAndClear();
+  delay(1000); DelayAndClear();
+  Serial.println("exit"); DelayAndClear();                //выходим из командного режима
+}
+
+void loop()
+{
+  //Согласно протокола HTTP клиент
+  //шлет довольно сложный запрос, но мы не будет его разбирать -
+  //нам достаточно дождаться окончания запроса.
+  //Запрос заканчивается пустой строкой, поэтому мы просто дождемся
+  //получения символа '\n', перед которым тоже были получены '\n' и '\r'.
+  //current_line_is_blank - это переменная-флаг. Она равна true, если
+  //вновь полученная от клиента строка пустая, т.е. в полученных данных
+  //не встретилось символов отличных от '\n' и '\r'.
+  //Будем выставлять переменную current_line_is_blank в false при
+  //получении любого отличного от '\n' и '\r' символа
+  boolean current_line_is_blank = true;
+
+  while (Serial.available()==0); //ожидаем появления принятого символа
+
+  //устанавливаем время таймаута, чтобы разорвать соединение, если
+  //от клиента не получен нормальный запрос
+  unsigned long timeout = millis() + 5000;  
+  while (millis() < timeout)
+  {
+    while (Serial.available()==0); //ожидаем появления принятого символа
+    char c = Serial.read();        //читаем этот символ
+    //Если получен перевод строки ('\n') и current_line_is_blank == true,
+    //значит мы получили пустую строку, т.е. запрос клиента окончен –
+    //можно слать ответ
+    if (c == '\n' && current_line_is_blank) {
+      //шлем стандартный HTTP заголовок
+      Serial.println("HTTP/1.1 200 OK");
+      Serial.println("Content-Type: text/html");
+      Serial.println();     //он тоже заканчивается пустой строкой!
+      //выдаем поочередно значения 6 аналоговых входов
+      for (int i = 0; i < 6; i++) {
+        Serial.print("analog input ");
+        Serial.print(i);
+        Serial.print(" is ");
+        Serial.print(analogRead(i));
+        Serial.println("<br>");   //HTML тэг <br> - перевод строки
+      }
+      break;   //работа окончена – можно выходить из цикла while
+    }
+    if (c == '\n') {  //если получен перевод строки, значит началась новая
+      //строка. Выставим флаг current_line_is_blank = true
+      current_line_is_blank = true;
+    } else if (c != '\r') { //если получен любой другой символ, отличный
+      //от возврата каретки ('\r'), значит получаемая строка непустая
+      current_line_is_blank = false;
+    }
+  }
+  delay(1000);                              //небольшая пауза, чтобы данные успели уйти
+  Serial.print("$$$"); DelayAndClear();     //командный режим
+  Serial.println("close"); DelayAndClear(); //закрываем соединение
+  Serial.println("exit"); DelayAndClear();  //выходим из командного режима
+}
