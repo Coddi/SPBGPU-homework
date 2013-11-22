@@ -1,7 +1,7 @@
 ﻿Module Module1
 
     Sub Main()
-        Dim lower As Single = 1
+        Dim lower As Single = 1000
         Dim upper As Single = 9999
         Dim middle As Single
         Dim answer As Integer
