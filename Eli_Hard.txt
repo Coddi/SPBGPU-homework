@@ -1,0 +1,7 @@
+Module All
+  Sub Main()
+    Dim Rows As Integer = 3, Cols As Integer = 4, Lines As Integer = 5
+    Console.WriteLine(String.Join(vbCrLf & vbCrLf, Enumerable.Repeat(String.Join(vbCrLf, From Q0 In Enumerable.Range(1, Lines + 1) Let Q = If(Q0 > Lines, 1, Q0), K2 = Lines << 1 Select New String((From W In Enumerable.Range(1, K2 * Cols - 1) Select If(Math.Abs(W Mod K2 - Lines) < Q, "#"c, " "c)).ToArray())), Rows)))
+    Console.ReadKey()
+  End Sub
+End Module
