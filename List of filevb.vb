@@ -4,8 +4,9 @@ Module Module1
 
     Sub Main()
         Dim Result()() As String
-        Dim catalig As String = "E:\Аниме"
+        Dim catalig As String = "E:\Загрузки"
         Result = ShowFile(catalig)
+        Console.ReadKey()
 
     End Sub
 
@@ -28,15 +29,9 @@ Module Module1
         Dim localCatalog() As String
         localCatalog = Directory.GetDirectories(catalog)
         elementInCatalog = UBound(localCatalog)
-        If elementInCatalog = -1 Then
-            filelist(elementInCatalog + 2) = Directory.GetFiles(catalog)
-            Exit Sub
-        End If
-        If filelist.Length <= elementInCatalog + 1 Then
-            ReDim Preserve filelist((elementInCatalog + 1))
-        End If
+        ReDim Preserve filelist((elementInCatalog + (UBound(filelist)) + 1))
         For i = 0 To elementInCatalog Step 1
-            filelist((UBound(filelist)) + 1) = Directory.GetFiles(localCatalog(i))
+            filelist((UBound(filelist)) - i) = Directory.GetFiles(localCatalog(i))
             CatalogList(localCatalog(i), filelist)
         Next
     End Sub
